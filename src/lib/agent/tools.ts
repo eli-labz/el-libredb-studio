@@ -73,6 +73,7 @@ import { actorLabel, executeAuditedOperation } from "@/lib/db/operations/executi
 import { inspectAgentStatement } from "@/lib/db/operations/statement-guard";
 import type { ExecutionActor, ExecutionPolicy, PolicyDenyCode, TargetScope } from "@/lib/db/operations/policy";
 import type { OperationRegistry } from "@/lib/db/operations/registry";
+import type { WorkKernelRuntime } from "@/lib/coworker/runtime";
 import type { DatabaseProvider, ProviderCapabilities, ProviderLabels } from "@/lib/db/types";
 import { asBytes, binaryText } from "@/lib/export/binary";
 import { hasOptimizerHint } from "@/lib/sql/optimizer-hints";
@@ -241,6 +242,8 @@ export interface AgentToolContext {
   readonly deadline: AgentRunDeadline;
   readonly repairs: AgentRepairLedger;
   readonly acquireProvider: AgentProviderAcquirer;
+  /** Task and occupation admission, before this context reaches operation policy. */
+  readonly workKernel?: WorkKernelRuntime;
   /** Injected for the audited-execution elapsed measurement, as in `execution.ts`. */
   readonly clock?: () => number;
 }

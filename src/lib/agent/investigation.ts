@@ -2522,6 +2522,27 @@ export async function runInvestigation(
 
     const record = resumed.record.status === "queued" ? await service.markRunning(runId) : resumed.record;
 
+    const admission =
+      record.mode === "agent"
+        ? resources.workKernel?.admit({
+            workflowType: record.workflowType,
+            actor: { ...record.actor, mode: record.mode },
+            policy: AGENT_WORKFLOW_BUDGETS[record.workflowType].policy,
+          })
+        : undefined;
+    if (admission?.kind === "denied") {
+      throw new AgentRunServiceError(
+        "RUN_NOT_STARTABLE",
+        `work-kernel admission denied for run "${runId}": ${admission.reasonCode}`,
+      );
+    }
+    if (admission?.kind === "approval-required") {
+      throw new AgentRunServiceError(
+        "RUN_NOT_STARTABLE",
+        `work-kernel approval required for run "${runId}": ${admission.task.id}`,
+      );
+    }
+
     /*
       What this stretch is about to be driven with, before it is driven with it.
 

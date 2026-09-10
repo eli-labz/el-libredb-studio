@@ -45,6 +45,7 @@ import { AgentRepairLedger } from "./repair-ledger";
 import { AgentRunService, AgentRunServiceError } from "./run-service";
 import { AgentRunStore, resolveAgentLedgerWorld } from "./run-store";
 import type { AgentRunFailureReason } from "./types";
+import { createWorkKernelRuntime } from "@/lib/coworker/runtime";
 
 /**
  * How long a run's results stay readable. Sized against the run deadline rather than
@@ -100,6 +101,12 @@ export const AGENT_MAX_ARTIFACTS = 180;
  * a route does at build time — allocates nothing while the runtime is off.
  */
 let processResources: { tracker: ExecutionBudgetTracker; artifacts: ExecutionArtifactStore<QueryResult> } | null = null;
+let processWorkKernel: ReturnType<typeof createWorkKernelRuntime> | null = null;
+
+function workKernelRuntime(): ReturnType<typeof createWorkKernelRuntime> {
+  processWorkKernel ??= createWorkKernelRuntime();
+  return processWorkKernel;
+}
 
 function runResources(): { tracker: ExecutionBudgetTracker; artifacts: ExecutionArtifactStore<QueryResult> } {
   processResources ??= {
@@ -197,6 +204,7 @@ export async function driveAgentRun(runId: string): Promise<AgentInvestigationRe
         deadline: new AgentRunDeadline(AGENT_WORKFLOW_BUDGETS[report.record.workflowType].runDeadlineMs),
         repairs: new AgentRepairLedger(),
         acquireProvider: acquireExecutionProfileProvider,
+        workKernel: workKernelRuntime(),
       },
     });
   } catch (error) {
